@@ -1,0 +1,13 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  outline: 0px solid red;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #b5b5b5; /* A very light grey background */
+}
+
+
