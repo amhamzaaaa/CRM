@@ -1,0 +1,72 @@
+[
+  {
+    "id": "92a39329-7082-42ea-8ccc-079e1e44cb46",
+    "title": "test",
+    "notes": "dsadads",
+    "status": "open",
+    "priority": "medium",
+    "due_at": "2026-09-12T07:07:00.000Z",
+    "assignee_user_id": "123",
+    "customer_id": null,
+    "completed_at": null,
+    "is_overdue": true,
+    "created_at": "2026-09-12T07:07:22.205Z",
+    "updated_at": "2026-09-12T07:07:22.205Z"
+  },
+  {
+    "id": "0c8f3a6e-1f8b-4a3e-9f21-1c2d3e4f5a6b",
+    "title": "Call back about talkimh",
+    "notes": "Wants the 3-seat number in writing.",
+    "status": "open",
+    "priority": "high",
+    "due_at": "2026-09-09T04:00:00.000Z",
+    "assignee_user_id": "usr_101",
+    "customer_id": "cust_201",
+    "completed_at": null,
+    "is_overdue": true,
+    "created_at": "2026-09-08T10:00:00Z",
+    "updated_at": "2026-09-12T05:48:20.656Z"
+  },
+  {
+    "id": "1d9f4b7f-2a9c-5b4f-af32-2d3e4f5a6b7c",
+    "title": "Draft Q3 Report",
+    "notes": null,
+    "status": "open",
+    "priority": "medium",
+    "due_at": "2026-09-15T09:00:00Z",
+    "assignee_user_id": null,
+    "customer_id": null,
+    "completed_at": null,
+    "is_overdue": false,
+    "created_at": "2026-09-10T14:30:00Z",
+    "updated_at": "2026-09-10T14:30:00Z"
+  },
+  {
+    "id": "2e0a5c8a-3b0d-6c5a-bf43-3e4f5a6b7c8d",
+    "title": "Someday maybe task",
+    "notes": "Review backlog items when capacity frees up.",
+    "status": "open",
+    "priority": "low",
+    "due_at": null,
+    "assignee_user_id": null,
+    "customer_id": null,
+    "completed_at": null,
+    "is_overdue": false,
+    "created_at": "2026-09-11T08:00:00Z",
+    "updated_at": "2026-09-11T08:00:00Z"
+  },
+  {
+    "id": "3f1b6d9b-4c1e-7d6b-cf54-4f5a6b7c8d9e",
+    "title": "Onboard new hire",
+    "notes": "Provide repo access and environment credentials.",
+    "status": "done",
+    "priority": "medium",
+    "due_at": "2026-09-10T12:00:00Z",
+    "assignee_user_id": "usr_101",
+    "customer_id": null,
+    "completed_at": "2026-09-10T11:45:00Z",
+    "is_overdue": false,
+    "created_at": "2026-09-07T09:00:00Z",
+    "updated_at": "2026-09-10T11:45:00Z"
+  }
+]

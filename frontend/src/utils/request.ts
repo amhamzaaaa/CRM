@@ -1,6 +1,6 @@
 interface RequestArgs{
   endpoint: string;
-  method?: "GET" | "POST" | "DELETE" | "PUT";
+  method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH";
   body?: unknown;
   query?: Record<string,string>; 
 }
