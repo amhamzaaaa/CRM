@@ -1,90 +1,253 @@
 # CRM Backend
 
-This project is the backend for the CRM application. It uses FastAPI for the HTTP API and is intended to connect to PostgreSQL as database features are added.
+Backend for a CRM application's Follow-up Tasks feature, built with FastAPI and PostgreSQL.
 
-## Folder organization
+## Tech Stack
 
-### `app/`
+- Python
+- FastAPI
+- SQLAlchemy
+- PostgreSQL
+- Alembic
+- Pydantic
+- pytest
+- Ruff
+- mypy
+- Docker Compose
 
-The main FastAPI application package. Application code that belongs to the backend lives here.
+## Project Structure
 
-Put API, schema, model, service, and database code in their matching subfolders. Do not put frontend files, deployment scripts, or future infrastructure code here unless a dedicated folder is added for it.
+```text
+backend/
+├── alembic/
+│   ├── versions/
+│   └── env.py
+├── app/
+│   ├── api/
+│   │   ├── routes/
+│   │   │   └── tasks.py
+│   │   └── dependencies.py
+│   ├── core/
+│   │   └── config.py
+│   ├── db/
+│   │   ├── database.py
+│   │   └── session.py
+│   ├── models/
+│   │   └── task.py
+│   ├── repositories/
+│   │   └── task_repository.py
+│   ├── schemas/
+│   │   └── task.py
+│   ├── services/
+│   │   └── task_service.py
+│   └── main.py
+├── tests/
+│   ├── integration/
+│   │   └── test_tasks.py
+│   ├── unit/
+│   │   └── test_task_service.py
+│   └── conftest.py
+├── .env
+├── alembic.ini
+├── docker-compose.yml
+├── Dockerfile
+├── pyproject.toml
+└── requirements.txt
+```
 
-The subfolders separate HTTP handling, data shapes, database models, business logic, and database setup while keeping them part of one application.
+## Architecture
 
-### `app/api/`
+The backend follows a layered architecture:
 
-The API layer handles HTTP requests and responses.
+```text
+HTTP Route
+    |
+Service
+    |
+Repository
+    |
+SQLAlchemy
+    |
+PostgreSQL
+```
 
-Put API-level organization and route wiring here. Do not put business rules, database models, or frontend code here; those belong in `services/`, `models/`, or the frontend project.
+- `api/routes`: HTTP request and response handling and route definitions
+- `schemas`: Pydantic request and response validation and API data models
+- `services`: Business and application logic
+- `repositories`: Database queries
+- `models`: SQLAlchemy database models
+- `db`: Database engine and session setup
+- `alembic`: Database migrations
+- `tests`: Unit tests and PostgreSQL integration tests
 
-The route files in `routes/` are exposed through this layer and call services when application work is needed.
+## Follow-up Tasks
 
-### `app/api/routes/`
+The API base path is `/api/v1/tasks`.
 
-This folder contains the actual FastAPI endpoint files, such as future `users.py`, `leads.py`, or `auth.py` modules.
+### Endpoints
 
-Put request handling, status codes, and route declarations here. Do not put database queries or large business rules here; delegate those to `db/` and `services/`.
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `/api/v1/tasks` | Create a task |
+| `GET` | `/api/v1/tasks` | List tasks |
+| `GET` | `/api/v1/tasks/{task_id}` | Get a task |
+| `PATCH` | `/api/v1/tasks/{task_id}` | Update a task |
+| `POST` | `/api/v1/tasks/{task_id}/complete` | Complete a task |
+| `POST` | `/api/v1/tasks/{task_id}/reopen` | Reopen a task |
+| `DELETE` | `/api/v1/tasks/{task_id}` | Delete a task |
 
-Routes receive HTTP input, use schemas for its shape, call services, and return API responses.
+### Task Fields
 
-### `app/schemas/`
+- `title`
+- `notes`
+- `status`: `open` or `done`
+- `priority`: `low`, `medium`, or `high`
+- `due_at`
+- `assignee_user_id`
+- `customer_id`
+- `completed_at`
+- `is_overdue`
+- `created_at`
+- `updated_at`
 
-This folder contains Pydantic schemas that define and validate data entering and leaving the API.
+`is_overdue` is calculated by the server and is not stored as a database field. It is `true` only when the task is open, has a due date, and that due date is in the past.
 
-Put request and response data models here. Do not put database table models or business workflows here; use `models/` and `services/` for those concerns.
+### List Filters
 
-Routes use schemas to keep API data contracts clear and consistent.
+`GET /api/v1/tasks` supports the following query parameters:
 
-### `app/models/`
+- `status`
+- `assignee_user_id`
+- `overdue`
+- `cursor`
+- `limit`
 
-This folder contains database models representing PostgreSQL tables.
+Pagination uses cursor-based keyset pagination rather than `OFFSET` pagination. The default limit is 25 items, and the maximum limit is 100 items per request.
 
-Put persistence model definitions here. Do not put API request and response schemas or business operations here; those belong in `schemas/` and `services/`.
+## Database
 
-Database setup in `db/` will use these models when database features are implemented.
+PostgreSQL runs through Docker Compose. From the `backend/` directory, start the database with:
 
-### `app/services/`
+```powershell
+docker compose up -d
+```
 
-This folder contains application business logic, such as creating, assigning, updating, or processing leads.
+PostgreSQL is exposed locally on port `5433`. The application uses the following database connection setting:
 
-Put reusable workflows and rules here. Do not put HTTP route declarations or direct frontend code here; routes belong in `api/routes/`.
+```dotenv
+DATABASE_URL=postgresql+psycopg://crm_user:crm_password@localhost:5433/crm
+```
 
-Routes call services so business behavior stays separate from request handling and database setup.
+Keep real credentials and other secrets out of version control.
 
-### `app/db/`
+## Database Migrations
 
-This folder contains PostgreSQL database setup, including the engine, sessions, connection settings, and related configuration.
+Alembic manages database schema migrations. After starting PostgreSQL, apply the migrations from the `backend/` directory:
 
-Put database connection and persistence setup here. Do not put API endpoints or general business logic here; those belong in `api/` and `services/`.
+```powershell
+alembic upgrade head
+```
 
-Models describe database data, while this folder provides the database connection they will use.
+## Running the API
 
-### `tests/`
+From the `backend/` directory, start FastAPI with:
 
-This folder contains automated tests for the backend.
+```powershell
+uvicorn app.main:app --reload
+```
 
-Put tests for routes, schemas, services, and database behavior here. Do not put application implementation code here; implementation belongs under `app/`.
+The API is available at:
 
-Tests exercise the application layers and help verify behavior as each feature is added.
+- API: http://127.0.0.1:8000
+- Swagger documentation: http://127.0.0.1:8000/docs
+- Health endpoint: http://127.0.0.1:8000/health
 
-## Run the application
+## Running Tests
 
-1. Create and activate a virtual environment.
-2. Install dependencies:
+Integration tests use the real PostgreSQL database rather than SQLite or mocked database behavior.
 
-   ```text
-   pip install -r requirements.txt
-   ```
+Run the test suite from `backend/` with:
 
-3. Start the development server from this directory:
+```powershell
+python -m pytest -v
+```
 
-   ```text
-   uvicorn app.main:app --reload
-   ```
+The tests cover:
 
-The API will be available at `http://127.0.0.1:8000`. FastAPI's interactive documentation is at `/docs`.
+- Task lifecycle
+- Cross-organization isolation
+- Cursor pagination
+- Overdue calculation
+- Open tasks with future due dates
+- Open tasks without due dates
+- Completed tasks with past due dates
+- Idempotent task completion
 
-The `.env` file is reserved for local environment values such as the PostgreSQL URL. Do not put real secrets in source control.
+Current result: **7 passed**.
 
-Folders for migrations/Alembic, repositories, integrations, workers, and other infrastructure will be added later when the application actually needs them.
+## Linting
+
+Run Ruff from `backend/`:
+
+```powershell
+ruff check .
+```
+
+Current result: **All checks passed**.
+
+## Type Checking
+
+Run mypy from `backend/`:
+
+```powershell
+mypy app
+```
+
+Current result: **Success: no issues found**.
+
+## Authentication and Organization Scoping
+
+Authentication is represented by a stub dependency so the Follow-up Tasks feature can be exercised without implementing the full production authentication system.
+
+- The organization ID comes from the authenticated user context.
+- The organization ID is not accepted from the request body, query parameters, or other client input.
+- All task database queries are scoped by organization.
+- A task belonging to another organization returns `404 Not Found` rather than `403 Forbidden`.
+
+## Error Responses
+
+API errors use the following structure:
+
+```json
+{
+  "error": {
+    "code": "not_found",
+    "message": "Task not found",
+    "details": null,
+    "request_id": "..."
+  }
+}
+```
+
+Validation failures use the `validation_error` code. Invalid cursors return HTTP `422` with a validation error response.
+
+## Development Notes
+
+- Make database schema changes through new Alembic migrations.
+- Keep business rules in the service layer.
+- Keep database queries in repositories.
+- Keep route handlers thin.
+- Use PostgreSQL for integration tests.
+
+## Deliberate Scope and Omissions
+
+The Follow-up Tasks implementation does not include:
+
+- Recurring tasks
+- Reminders
+- Notifications
+- Calendar synchronization
+- Bulk task operations
+- Full production authentication and authorization
+
+These features are outside the required core scope of the Follow-up Tasks assignment.
