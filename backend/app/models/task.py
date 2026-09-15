@@ -2,7 +2,6 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, String, Text
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.database import Base
@@ -12,13 +11,11 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
     )
 
     organization_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
         nullable=False,
         index=True,
     )
@@ -51,12 +48,10 @@ class Task(Base):
     )
 
     assignee_user_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
         nullable=True,
     )
 
     customer_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
         nullable=True,
     )
 

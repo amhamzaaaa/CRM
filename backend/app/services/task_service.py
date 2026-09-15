@@ -2,12 +2,13 @@ import base64
 import json
 import uuid
 from datetime import datetime, timezone
+from typing import cast
 
 from sqlalchemy.orm import Session
 
 from app.models.task import Task
 from app.repositories.task_repository import TaskRepository
-from app.schemas.task import TaskCreateIn, TaskOut, TaskUpdateIn
+from app.schemas.task import Priority, Status, TaskCreateIn, TaskOut, TaskUpdateIn
 
 repository = TaskRepository()
 
@@ -30,23 +31,15 @@ def encode_cursor(task: Task) -> str:
 
     cursor_json = json.dumps(cursor_data)
 
-    return base64.urlsafe_b64encode(
-        cursor_json.encode()
-    ).decode()
+    return base64.urlsafe_b64encode(cursor_json.encode()).decode()
 
 
 def decode_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
     try:
-        cursor_json = base64.urlsafe_b64decode(
-            cursor.encode()
-        ).decode()
-
+        cursor_json = base64.urlsafe_b64decode(cursor.encode()).decode()
         cursor_data = json.loads(cursor_json)
 
-        created_at = datetime.fromisoformat(
-            cursor_data["created_at"]
-        )
-
+        created_at = datetime.fromisoformat(cursor_data["created_at"])
         task_id = uuid.UUID(cursor_data["id"])
 
         return created_at, task_id
@@ -60,8 +53,8 @@ def to_task_out(task: Task) -> TaskOut:
         id=task.id,
         title=task.title,
         notes=task.notes,
-        status=task.status,
-        priority=task.priority,
+        status=cast(Status, task.status),
+        priority=cast(Priority, task.priority),
         due_at=task.due_at,
         assignee_user_id=task.assignee_user_id,
         customer_id=task.customer_id,
@@ -95,8 +88,8 @@ def create_task(
 
 def get_task(
     db: Session,
-    organization_id: uuid.UUID,
     task_id: uuid.UUID,
+    organization_id: uuid.UUID,
 ) -> TaskOut | None:
     task = repository.get_by_id(
         db=db,
@@ -141,23 +134,18 @@ def list_tasks(
     if has_next_page:
         tasks = tasks[:limit]
 
-    items = [
-        to_task_out(task)
-        for task in tasks
-    ]
+    items = [to_task_out(task) for task in tasks]
 
     if not has_next_page:
         return items, None
 
-    next_cursor = encode_cursor(tasks[-1])
-
-    return items, next_cursor
+    return items, encode_cursor(tasks[-1])
 
 
 def update_task(
     db: Session,
-    organization_id: uuid.UUID,
     task_id: uuid.UUID,
+    organization_id: uuid.UUID,
     data: TaskUpdateIn,
 ) -> TaskOut | None:
     task = repository.get_by_id(
@@ -170,6 +158,12 @@ def update_task(
         return None
 
     updates = data.model_dump(exclude_unset=True)
+
+    if "title" in updates and updates["title"] is None:
+        raise ValueError("Title cannot be null")
+
+    if "priority" in updates and updates["priority"] is None:
+        raise ValueError("Priority cannot be null")
 
     if "title" in updates:
         task.title = updates["title"]
@@ -189,8 +183,6 @@ def update_task(
     if "customer_id" in updates:
         task.customer_id = updates["customer_id"]
 
-    task.updated_at = datetime.now(timezone.utc)
-
     task = repository.update(db, task)
 
     return to_task_out(task)
@@ -198,8 +190,8 @@ def update_task(
 
 def delete_task(
     db: Session,
-    organization_id: uuid.UUID,
     task_id: uuid.UUID,
+    organization_id: uuid.UUID,
 ) -> bool:
     task = repository.get_by_id(
         db=db,
@@ -217,8 +209,8 @@ def delete_task(
 
 def complete_task(
     db: Session,
-    organization_id: uuid.UUID,
     task_id: uuid.UUID,
+    organization_id: uuid.UUID,
 ) -> TaskOut | None:
     task = repository.get_by_id(
         db=db,
@@ -232,8 +224,6 @@ def complete_task(
     if task.status == "open":
         task.status = "done"
         task.completed_at = datetime.now(timezone.utc)
-        task.updated_at = datetime.now(timezone.utc)
-
         task = repository.update(db, task)
 
     return to_task_out(task)
@@ -241,8 +231,8 @@ def complete_task(
 
 def reopen_task(
     db: Session,
-    organization_id: uuid.UUID,
     task_id: uuid.UUID,
+    organization_id: uuid.UUID,
 ) -> TaskOut | None:
     task = repository.get_by_id(
         db=db,
@@ -253,9 +243,11 @@ def reopen_task(
     if task is None:
         return None
 
+    if task.status == "open":
+        return to_task_out(task)
+
     task.status = "open"
     task.completed_at = None
-    task.updated_at = datetime.now(timezone.utc)
 
     task = repository.update(db, task)
 

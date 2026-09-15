@@ -5,6 +5,7 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 from app.core.config import settings
 from app.db.database import Base
+from app.models.task import Task  # noqa: F401
 
 config = context.config
 
@@ -15,6 +16,7 @@ config.set_main_option(
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
 
 target_metadata = Base.metadata
 

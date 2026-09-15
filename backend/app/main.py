@@ -5,6 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
+from app.api.errors import error_response
 from app.api.routes.tasks import router as tasks_router
 from app.db.database import engine
 
@@ -32,16 +33,11 @@ async def not_found_handler(
     request: Request,
     exc: Exception,
 ) -> JSONResponse:
-    return JSONResponse(
+    return error_response(
+        request=request,
         status_code=404,
-        content={
-            "error": {
-                "code": "not_found",
-                "message": "Task not found",
-                "details": None,
-                "request_id": request.state.request_id,
-            }
-        },
+        code="not_found",
+        message="Resource not found",
     )
 
 
@@ -50,16 +46,25 @@ async def validation_error_handler(
     request: Request,
     exc: RequestValidationError,
 ) -> JSONResponse:
-    return JSONResponse(
+    return error_response(
+        request=request,
         status_code=422,
-        content={
-            "error": {
-                "code": "validation_error",
-                "message": "Request validation failed",
-                "details": exc.errors(),
-                "request_id": request.state.request_id,
-            }
-        },
+        code="validation_error",
+        message="Request validation failed",
+        details=exc.errors(),
+    )
+
+
+@app.exception_handler(Exception)
+async def unexpected_error_handler(
+    request: Request,
+    exc: Exception,
+) -> JSONResponse:
+    return error_response(
+        request=request,
+        status_code=500,
+        code="internal_server_error",
+        message="An unexpected error occurred",
     )
 
 
@@ -69,15 +74,14 @@ app.include_router(tasks_router)
 @app.get("/")
 def root():
     return {
-        "message": "CRM backend is running"
+        "message": "CRM backend is running",
     }
 
 
 @app.get("/health")
 def health_check():
-    connection = engine.connect()
-    connection.execute(text("SELECT 1"))
-    connection.close()
+    with engine.connect() as connection:
+        connection.execute(text("SELECT 1"))
 
     return {
         "status": "ok",
